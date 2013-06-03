@@ -144,6 +144,8 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
             ? 'application/json'
             : format.indexOf('jpeg') === 0
             ? 'image/jpeg'
+            : format.match(/json/) > 0
+            ? 'application/json'
             : 'image/png';
         headers['ETag'] = JSON.stringify(crypto.createHash('md5')
             .update(source._scale + source._md5 + (head && head['ETag'] || (z+','+x+','+y)))
@@ -161,15 +163,17 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
             // Errors for null data are ignored as a solid tile be painted.
             if (data && err) return callback(err);
 
-            var opts = {z:z, x:x, y:y, scale:source._scale};
+            var opts = {z:z, x:x, y:y, scale:source._scale}, json;
             if (format === 'utf') {
                 var surface = new mapnik.Grid(256,256);
                 opts.layer = source._map.parameters.interactivity_layer;
                 opts.fields = source._map.parameters.interactivity_fields.split(',');
+            } else if (format === 'json' || format === 'geojson') {
+                json = vtile.toJSON();
             } else {
                 var surface = new mapnik.Image(256,256);
             }
-            vtile.render(source._map, surface, opts, function(err, image) {
+            if (!json) vtile.render(source._map, surface, opts, function(err, image) {
                 if (err) return callback(err);
                 image.encode(format, {}, function(err, buffer) {
                     if (err) return callback(err);
@@ -180,6 +184,7 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
                     return callback(null, buffer, headers);
                 });
             });
+            else callback(null, json, headers);
         });
     });
 };
@@ -250,6 +255,12 @@ Vector.prototype.getGrid = function(z, x, y, callback) {
     if (!this._map.parameters.interactivity_layer) return callback(new Error('Tilesource has no interactivity_layer'));
     if (!this._map.parameters.interactivity_fields) return callback(new Error('Tilesource has no interactivity_fields'));
     callback.format = 'utf';
+    return this.getTile(z, x, y, callback);
+};
+
+Vector.prototype.getJson = function(z, x, y, callback) {
+    if (!this._map) return callback(new Error('Tilesource not loaded'));
+    callback.format = 'json';
     return this.getTile(z, x, y, callback);
 };
 

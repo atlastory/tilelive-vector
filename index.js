@@ -169,7 +169,11 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
                 opts.layer = source._map.parameters.interactivity_layer;
                 opts.fields = source._map.parameters.interactivity_fields.split(',');
             } else if (format === 'json' || format === 'geojson') {
-                json = vtile.toJSON();
+                var geoJsonArray = [];
+                for (var i in vtile.toJSON()) {
+                    geoJsonArray.push(vtile.toGeoJson(i));
+                }
+                json = JSON.stringify(geoJsonArray);
             } else {
                 var surface = new mapnik.Image(256,256);
             }

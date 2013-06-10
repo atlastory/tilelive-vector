@@ -171,7 +171,7 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
             } else if (format === 'json' || format === 'geojson') {
                 var geoJsonArray = [];
                 for (var i in vtile.toJSON()) {
-                    geoJsonArray.push(vtile.toGeoJson(i));
+                    geoJsonArray.push(vtile.toGeoJSON(i));
                 }
                 json = JSON.stringify(geoJsonArray);
             } else {

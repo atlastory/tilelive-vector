@@ -173,7 +173,7 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
                 for (var i in vtile.toJSON()) {
                     layerArray.push(vtile.toGeoJSON(parseFloat(i)));
                 }
-                json = JSON.stringify(layerArray);
+                json = new Buffer(JSON.stringify(layerArray));
             } else {
                 var surface = new mapnik.Image(256,256);
             }

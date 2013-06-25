@@ -3,6 +3,7 @@ var zlib = require('zlib');
 var path = require('path');
 var util = require('util');
 var crypto = require('crypto');
+var topojson = require('topojson');
 
 module.exports = Vector;
 
@@ -139,14 +140,17 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
         if (err && source._maskLevel && bz > source._maskLevel)
             return callback(format === 'utf' ? new Error('Grid does not exist') : err);
 
-        var headers = {};
-        headers['Content-Type'] = format.indexOf('utf') === 0
-            ? 'application/json'
-            : format.indexOf('jpeg') === 0
-            ? 'image/jpeg'
-            : format.match(/json/) > 0
-            ? 'application/json'
-            : 'image/png';
+        var headers = {}, type;
+
+        switch (format) {
+            case 'utf':      type = 'application/json'; break;
+            case 'jpeg':     type = 'image/jpeg'; break;
+            case 'geojson':  type = 'application/json'; break;
+            case 'topojson': type = 'application/json'; break;
+            default:         type = 'image/png';
+        }
+
+        headers['Content-Type'] = type;
         headers['ETag'] = JSON.stringify(crypto.createHash('md5')
             .update(source._scale + source._md5 + (head && head['ETag'] || (z+','+x+','+y)))
             .digest('hex'));
@@ -168,12 +172,31 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
                 var surface = new mapnik.Grid(256,256);
                 opts.layer = source._map.parameters.interactivity_layer;
                 opts.fields = source._map.parameters.interactivity_fields.split(',');
+
             } else if (format === 'json' || format === 'geojson') {
                 var geoJSON = vtile.toGeoJSON('__all__');
                 json = new Buffer(JSON.stringify(geoJSON));
+
+            } else if (format === 'topojson') {
+                var geoJSON = vtile.toGeoJSON('__all__'),
+                    topoJSON = topojson.topology(geoJSON, {
+                        "id": function(d){ return d.gid; },
+                        "quantization": 1e4,
+                        "property-transform": function(p,k,v) {
+                            p[k] = v;
+                            return true;
+                        }
+                    });
+                topojson.simplify(topoJSON, {
+                    "minimum-area": 0,
+                    "retain-proportion": 1
+                });
+                json = new Buffer(JSON.stringify(topoJSON));
+
             } else {
                 var surface = new mapnik.Image(256,256);
             }
+
             if (!json) vtile.render(source._map, surface, opts, function(err, image) {
                 if (err) return callback(err);
                 image.encode(format, {}, function(err, buffer) {

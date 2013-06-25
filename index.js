@@ -179,7 +179,9 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
 
             } else if (format === 'topojson') {
                 var geoJSON = vtile.toGeoJSON('__all__'),
-                    topology = topojson.topology(geoJSON, {
+                    topology = topojson.topology({
+                        collection: geoJSON
+                    }, {
                         "id": function(d){ return d.id || d.gid; },
                         "quantization": 1e4,
                         "property-transform": function(p,k,v) {

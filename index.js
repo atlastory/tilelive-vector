@@ -179,19 +179,21 @@ Vector.prototype.drawTile = function(bz, bx, by, z, x, y, format, callback) {
 
             } else if (format === 'topojson') {
                 var geoJSON = vtile.toGeoJSON('__all__'),
-                    topoJSON = topojson.topology(geoJSON, {
-                        "id": function(d){ return d.gid; },
+                    topology = topojson.topology({
+                        collection: geoJSON
+                    }, {
+                        "id": function(d){ return d.id || d.gid; },
                         "quantization": 1e4,
                         "property-transform": function(p,k,v) {
                             p[k] = v;
                             return true;
                         }
                     });
-                topojson.simplify(topoJSON, {
+                topojson.simplify(topology, {
                     "minimum-area": 0,
                     "retain-proportion": 1
                 });
-                json = new Buffer(JSON.stringify(topoJSON));
+                json = new Buffer(JSON.stringify(topology));
 
             } else {
                 var surface = new mapnik.Image(256,256);

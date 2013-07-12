@@ -5,7 +5,7 @@
     "main": "./index.js",
     "description": "Vector tile => raster tile backend for tilelive",
     "dependencies": {
-        "mapnik": "1.0.0",
+        "mapnik": "https://github.com/mapnik/node-mapnik/tarball/master",
         "topojson": "~1.2.2"
     },
     "devDependencies": {
